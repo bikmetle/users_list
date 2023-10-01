@@ -1,14 +1,21 @@
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from urllib.parse import urlencode
 
 
 class UserViewSetTestCase(APITestCase):
     @classmethod
     def setUpClass(cls):
-        cls.user_1 = get_user_model().objects.create(id=1, username='one', password=1, is_staff=True)
-        cls.user_2 = get_user_model().objects.create(id=2, username='two', password=12)
-        cls.user_3 = get_user_model().objects.create(id=3, username='three', password=123)
+        cls.user_1 = get_user_model().objects.create(id=1, first_name="Boris", 
+                                                     last_name="Simpson", username='one', 
+                                                     password="1", is_staff=True)
+        cls.user_2 = get_user_model().objects.create(id=2, first_name="Nick", 
+                                                     last_name="Simpson", username='two', 
+                                                     password="12")
+        cls.user_3 = get_user_model().objects.create(id=3, first_name="Nick", 
+                                                     last_name="McDonald", username='three', 
+                                                     password="123")
         cls.list_url = reverse("api:v1:users-list")
         cls.detail_url = reverse("api:v1:users-detail", kwargs={"pk": cls.user_3.id})
 
@@ -89,3 +96,24 @@ class UserViewSetTestCase(APITestCase):
             f"/api/v1/users/{self.user_3.id}"
         )
 
+    def test_sort_by(self):
+        params = {'sort_by': 'username'}
+        response = self.client.get(self.list_url + '?' + urlencode(params))
+        self.assertEqual(response.status_code, 200)
+        expected_usernames = ['one', 'three', 'two']
+        response_usernames = [user["username"] for user in response.json()]
+        self.assertEqual(expected_usernames, response_usernames)        
+
+    def test_first_name_filer(self):
+        params = {'first_name': 'Boris'}
+        response = self.client.get(self.list_url + '?' + urlencode(params))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.json()[0]["first_name"], params["first_name"])
+
+    def test_last_name_filter(self):
+        params = {'last_name': 'McDonald'}
+        response = self.client.get(self.list_url + '?' + urlencode(params))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.json()[0]["last_name"], params["last_name"])
