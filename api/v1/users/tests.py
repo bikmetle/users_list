@@ -96,8 +96,8 @@ class UserViewSetTestCase(APITestCase):
             f"/api/v1/users/{self.user_3.id}"
         )
 
-    def test_sort_by(self):
-        params = {'sort_by': 'username'}
+    def test_sort_by_field(self):
+        params = {'sort_by_field': 'username'}
         response = self.client.get(self.list_url + '?' + urlencode(params))
         self.assertEqual(response.status_code, 200)
         expected_usernames = ['one', 'three', 'two']
